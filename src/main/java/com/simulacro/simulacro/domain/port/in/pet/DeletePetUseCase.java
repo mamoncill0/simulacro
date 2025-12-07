@@ -1,4 +1,5 @@
 package com.simulacro.simulacro.domain.port.in.pet;
 
-public class DeletePetUseCase {
+public interface DeletePetUseCase {
+    void deactivatePet(Long id);
 }

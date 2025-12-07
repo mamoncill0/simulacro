@@ -1,4 +1,7 @@
 package com.simulacro.simulacro.domain.port.in.appointment;
 
-public class CancelAppointmentUseCase {
+import com.simulacro.simulacro.domain.model.appointment.Appointment;
+
+public interface CancelAppointmentUseCase {
+    Appointment cancelAppointment(Long appointmentId);
 }
