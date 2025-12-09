@@ -27,7 +27,8 @@ public class PetPersistenceMapper {
         entity.setSpecies(domain.getSpecies());
         entity.setBreed(domain.getBreed());
         entity.setAge(domain.getAge());
-        entity.setOwnerId(Long.valueOf(domain.getOwner()));
+        entity.setOwnerId(domain.getOwnerId()); // Correcto: obtiene el ownerId del dominio
+        entity.setOwnerName(domain.getOwnerName());
         entity.setOwnerDocument(domain.getOwnerDocument());
         entity.setStatus(domain.getStatus());
         return entity;
@@ -41,7 +42,8 @@ public class PetPersistenceMapper {
             return null;
         }
 
-        return new Pet(
+        // Crear el objeto Pet usando el constructor existente
+        Pet pet = new Pet(
                 entity.getId(),
                 entity.getName(),
                 entity.getSpecies(),
@@ -51,6 +53,10 @@ public class PetPersistenceMapper {
                 entity.getOwnerDocument(),
                 entity.getStatus()
         );
+        // Establecer el ownerId explícitamente, ya que el constructor lo inicializa a null
+        pet.setOwnerId(entity.getOwnerId()); // <-- CORRECCIÓN AQUÍ
+
+        return pet;
     }
 
     /**

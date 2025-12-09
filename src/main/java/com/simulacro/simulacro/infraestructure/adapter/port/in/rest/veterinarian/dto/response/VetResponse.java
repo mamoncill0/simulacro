@@ -1,44 +1,43 @@
 package com.simulacro.simulacro.infraestructure.adapter.port.in.rest.veterinarian.dto.response;
 
-
-import com.simulacro.simulacro.domain.model.veterinarian.Vet;
-
-//Aca haremos la respuesta que se mandara en el Swagger o Postman al momento de que tenga una ejecucion correctamente
 public class VetResponse {
-    private String message;
-    private boolean avalability;
-    private Vet data;
+    private Long id; // Cambiado de Integer veterinarianId a Long id
+    private String name; // Cambiado de nameVeterinarian a name
+    private String specialty; // Añadido
 
+    // Constructor vacío
     public VetResponse() {
     }
 
-    public VetResponse(String message, boolean avalability, Vet data) {
-        this.message = message;
-        this.avalability = avalability;
-        this.data = data;
+    // Constructor completo
+    public VetResponse(Long id, String name, String specialty) {
+        this.id = id;
+        this.name = name;
+        this.specialty = specialty;
     }
 
-    public String getMessage() {
-        return message;
+    // Getters y Setters
+    public Long getId() {
+        return id;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public boolean isAvalability() {
-        return avalability;
+    public String getName() {
+        return name;
     }
 
-    public void setAvalability(boolean avalability) {
-        this.avalability = avalability;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public Vet getData() {
-        return data;
+    public String getSpecialty() {
+        return specialty;
     }
 
-    public void setData(Vet data) {
-        this.data = data;
+    public void setSpecialty(String specialty) {
+        this.specialty = specialty;
     }
 }

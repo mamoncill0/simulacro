@@ -1,5 +1,5 @@
 package com.simulacro.simulacro.domain.model.pets;
 
 public enum Status {
-    Active, ACTIVE, Inactive
+    Active, Inactive
 }

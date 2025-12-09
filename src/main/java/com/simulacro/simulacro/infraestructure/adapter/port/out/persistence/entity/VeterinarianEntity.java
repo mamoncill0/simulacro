@@ -17,7 +17,7 @@ public class VeterinarianEntity {
     private String specialty;
 
     // Constructor vacío
-    protected VeterinarianEntity() {}
+    public VeterinarianEntity() {}
 
     public VeterinarianEntity(String name, String specialty) {
         this.name = name;

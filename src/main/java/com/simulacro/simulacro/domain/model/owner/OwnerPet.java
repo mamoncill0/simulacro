@@ -1,7 +1,5 @@
 package com.simulacro.simulacro.domain.model.owner;
 
-import java.util.Objects;
-
 public class OwnerPet {
     private Long id;
     private String name;

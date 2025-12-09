@@ -1,140 +1,207 @@
 package com.simulacro.simulacro.infraestructure.exception;
 
 import com.simulacro.simulacro.domain.exception.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.ProblemDetail;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
+import java.net.URI;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * Manejador global de excepciones
- * Captura todas las excepciones y las convierte en respuestas HTTP apropiadas
+ * Manejador global de excepciones para la aplicación.
+ * Centraliza la gestión de errores y devuelve respuestas estandarizadas en formato ProblemDetail (RFC 7807).
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Maneja errores de validación (@Valid en DTOs)
+     * Maneja excepciones de usuario no encontrado.
+     * @param ex La excepción UserNotFoundException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 404 Not Found.
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFoundException(UserNotFoundException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problemDetail.setTitle("Recurso no encontrado");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/not-found"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de usuario ya existente.
+     * @param ex La excepción UserAlreadyExistsException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 409 Conflict.
+     */
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ProblemDetail handleUserAlreadyExistsException(UserAlreadyExistsException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("Conflicto de datos");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/user-already-exists"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de credenciales inválidas.
+     * @param ex La excepción InvalidCredentialsException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ProblemDetail handleInvalidCredentialsException(InvalidCredentialsException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problemDetail.setTitle("Credenciales inválidas");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/invalid-credentials"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de argumentos de método no válidos (Bean Validation).
+     * @param ex La excepción MethodArgumentNotValidException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 400 Bad Request y detalles de los errores de validación.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(
-            MethodArgumentNotValidException ex) {
+    public ProblemDetail handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Error de validación en la petición.");
+        problemDetail.setTitle("Argumentos inválidos");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/invalid-arguments"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
 
-        Map<String, Object> errors = new HashMap<>();
-        errors.put("timestamp", LocalDateTime.now());
-        errors.put("status", HttpStatus.BAD_REQUEST.value());
-        errors.put("error", "Errores de validación");
-
-        Map<String, String> fieldErrors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), error.getDefaultMessage())
-        );
-
-        errors.put("campos", fieldErrors);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        problemDetail.setProperty("errors", errors);
+        return problemDetail;
     }
 
     /**
-     * Maneja argumentos inválidos (validaciones del dominio)
+     * Maneja excepciones de acceso denegado (autorización).
+     * @param ex La excepción AccessDeniedException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 403 Forbidden.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Acceso denegado. No tiene permisos para realizar esta acción.");
+        problemDetail.setTitle("Acceso denegado");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/access-denied"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de autenticación (ej. token JWT inválido o expirado).
+     * @param ex La excepción AuthenticationException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 401 Unauthorized.
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problemDetail.setTitle("Fallo de autenticación");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/authentication-failed"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de violación de integridad de datos (ej. clave única duplicada).
+     * @param ex La excepción DataIntegrityViolationException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 409 Conflict.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolationException(DataIntegrityViolationException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Violación de integridad de datos. Posiblemente un registro duplicado o una referencia inválida.");
+        problemDetail.setTitle("Conflicto de datos");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/data-integrity-violation"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
+    }
+
+    /**
+     * Maneja excepciones de argumentos ilegales.
+     * @param ex La excepción IllegalArgumentException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 400 Bad Request.
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
-            IllegalArgumentException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("error", "Datos inválidos");
-        error.put("mensaje", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problemDetail.setTitle("Argumento inválido");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/illegal-argument"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
     }
 
     /**
-     * Maneja estados inválidos (reglas de negocio)
+     * Maneja excepciones de estado ilegal.
+     * @param ex La excepción IllegalStateException.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 409 Conflict.
      */
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalStateException(
-            IllegalStateException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.CONFLICT.value());
-        error.put("error", "Estado inválido");
-        error.put("mensaje", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    public ProblemDetail handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problemDetail.setTitle("Estado inválido");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/illegal-state"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        return problemDetail;
     }
 
     /**
-     * Maneja mascota no encontrada
-     */
-    @ExceptionHandler(PetNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handlePetNotFoundException(
-            PetNotFoundException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.NOT_FOUND.value());
-        error.put("error", "Mascota no encontrada");
-        error.put("mensaje", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
-
-    /**
-     * Maneja citas inválidas
-     */
-    @ExceptionHandler(InvalidAppointmentException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidAppointmentException(
-            InvalidAppointmentException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("error", "Cita inválida");
-        error.put("mensaje", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
-
-    /**
-     * Maneja veterinario no disponible
-     */
-    @ExceptionHandler(VetNotAvailableException.class)
-    public ResponseEntity<Map<String, Object>> handleVetNotAvailableException(
-            VetNotAvailableException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.CONFLICT.value());
-        error.put("error", "Veterinario no disponible");
-        error.put("mensaje", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-    }
-
-    /**
-     * Maneja cualquier otra excepción no controlada
+     * Manejador genérico para cualquier otra excepción no capturada.
+     * @param ex La excepción genérica.
+     * @param request La petición HTTP.
+     * @return Un ProblemDetail con estado 500 Internal Server Error.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        error.put("error", "Error interno del servidor");
-        error.put("mensaje", "Ocurrió un error inesperado. Por favor, contacte al administrador.");
-
-        // Log the exception for debugging
-        ex.printStackTrace();
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    public ProblemDetail handleGenericException(Exception ex, HttpServletRequest request) {
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error inesperado.");
+        problemDetail.setTitle("Error interno del servidor");
+        problemDetail.setType(URI.create("https://api.simulacro.com/errors/internal-server-error"));
+        problemDetail.setInstance(URI.create(request.getRequestURI()));
+        problemDetail.setProperty("timestamp", Instant.now());
+        problemDetail.setProperty("traceId", UUID.randomUUID().toString());
+        // Opcional: Loggear la excepción completa para depuración
+        // log.error("Error inesperado: {}", ex.getMessage(), ex);
+        return problemDetail;
     }
 }

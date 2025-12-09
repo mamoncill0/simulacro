@@ -36,7 +36,7 @@ public class AppointmentEntity {
     private String diagnosis;
 
     // Constructor vacío
-    protected AppointmentEntity() {}
+    public AppointmentEntity() {}
 
     // Getters y Setters
     public Long getId() { return id; }

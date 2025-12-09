@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface AppointmentRepository {
     Appointment save(Appointment appointment);
     Optional<Appointment> findById(Long appointmentId);
+    List<Appointment> findAll(); // Añadido
     List<Appointment> findByPetId(Long petId);
     List<Appointment> findByVeterinarianId(Long veterinarianId);
     List<Appointment> findByDate(LocalDate date);

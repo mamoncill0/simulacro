@@ -3,30 +3,47 @@ package com.simulacro.simulacro.domain.model.veterinarian;
 
 //En esta clase haremos los datos que tendra el Veterinario, para mirar su disponibilidad
 public class Vet {
-    private Integer veterinarianId;
-    private String nameVeterinarian;
+    private Long id; // Cambiado de Integer veterinarianId a Long id
+    private String name; // Cambiado de nameVeterinarian a name
+    private String specialty; // Añadido
 
     public Vet() {
     }
 
-    public Vet(Integer veterinarianId, String nameVeterinarian) {
-        this.veterinarianId = veterinarianId;
-        this.nameVeterinarian = nameVeterinarian;
+    // Constructor completo para reconstruir desde BD
+    public Vet(Long id, String name, String specialty) {
+        this.id = id;
+        this.name = name;
+        this.specialty = specialty;
     }
 
-    public Integer getVeterinarianId() {
-        return veterinarianId;
+    // Constructor para crear nuevo veterinario (sin ID)
+    public Vet(String name, String specialty) {
+        this(null, name, specialty);
     }
 
-    public void setVeterinarianId(Integer veterinarianId) {
-        this.veterinarianId = veterinarianId;
+    // Getters y Setters
+    public Long getId() {
+        return id;
     }
 
-    public String getNameVeterinarian() {
-        return nameVeterinarian;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setNameVeterinarian(String nameVeterinarian) {
-        this.nameVeterinarian = nameVeterinarian;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getSpecialty() {
+        return specialty;
+    }
+
+    public void setSpecialty(String specialty) {
+        this.specialty = specialty;
     }
 }

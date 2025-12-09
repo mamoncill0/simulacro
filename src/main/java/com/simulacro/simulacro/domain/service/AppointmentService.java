@@ -11,17 +11,22 @@ import com.simulacro.simulacro.domain.port.in.appointment.*;
 import com.simulacro.simulacro.domain.port.out.AppointmentRepository;
 import com.simulacro.simulacro.domain.port.out.PetRepository;
 import com.simulacro.simulacro.domain.port.out.VeterinarianRepository;
+import org.springframework.stereotype.Service; // Importar @Service
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Servicio del dominio para gestión de citas médicas
  */
+@Service // Añadido
 public class AppointmentService implements CreateAppointmentUseCase,
-        ConfirmAppointmentUseCase,
-        CancelAppointmentUseCase,
-        AddDiagnosisUseCase {
+                                            ConfirmAppointmentUseCase,
+                                            CancelAppointmentUseCase,
+                                            AddDiagnosisUseCase,
+                                            FindAppointmentUseCase { // Añadido FindAppointmentUseCase
 
     private final AppointmentRepository appointmentRepository;
     private final PetRepository petRepository;
@@ -37,14 +42,14 @@ public class AppointmentService implements CreateAppointmentUseCase,
 
     @Override
     public Appointment createAppointment(Long petId, Long veterinarianId,
-                                         LocalDate date, LocalTime time, String reason, StatusAppointment status, String diagnosis) {
+                                         LocalDate date, LocalTime time, String reason) {
 
         // 1. Validar que la mascota existe
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new PetNotFoundException("Mascota no encontrada con ID: " + petId));
 
         // 2. REGLA DE NEGOCIO: Solo mascotas ACTIVAS pueden agendar citas
-        if (!pet.getStatus().equals(Status.ACTIVE)) {
+        if (!pet.getStatus().equals(Status.Active)) {
             throw new InvalidAppointmentException(
                     "La mascota '" + pet.getName() + "' está INACTIVA y no puede solicitar citas. " +
                             "Por favor, active la mascota primero."
@@ -180,5 +185,26 @@ public class AppointmentService implements CreateAppointmentUseCase,
 
         // 6. Guardar
         return appointmentRepository.save(appointment);
+    }
+
+    // Métodos de FindAppointmentUseCase
+    @Override
+    public Optional<Appointment> findById(Long id) {
+        return appointmentRepository.findById(id);
+    }
+
+    @Override
+    public List<Appointment> findAll() {
+        return appointmentRepository.findAll();
+    }
+
+    @Override
+    public List<Appointment> findAllByPetId(Long petId) {
+        return appointmentRepository.findByPetId(petId);
+    }
+
+    @Override
+    public List<Appointment> findAllByVetId(Long vetId) {
+        return appointmentRepository.findByVeterinarianId(vetId);
     }
 }
